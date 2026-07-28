@@ -1,0 +1,39 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+description='''
+Boîte à outils pour Millenaire : raids nocturnes de monstres sur les villages, correctifs et
+options de confort pour les villages contrôlés (le tout activable/désactivable).
+'''
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.226,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="millenaire"
+    type="required"
+    # Pas de borne basse stricte : Millenaire est en pré-1.0 et change de qualificatif de version
+    # à chaque sortie (dev-preview.x, beta.x, ...), qui trie AVANT "9.0.0" en versionnage Maven
+    # (un "[9.0.0,)" rejette donc "9.0.0-beta.2"). On vérifie juste la présence du mod.
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[mixins]]
+config="milltools.mixins.json"

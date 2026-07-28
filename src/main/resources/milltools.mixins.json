@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.millenaire.milltools.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "HuntMonsterGoalMixin",
+    "EngageTargetGoalMixin",
+    "VillageIntegrityCheckerMixin",
+    "MillVillagerArmorSyncMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

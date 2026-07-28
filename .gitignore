@@ -1,0 +1,32 @@
+# === Build / Gradle ===
+/.gradle/
+/build/
+!/gradle/wrapper/gradle-wrapper.jar
+
+# === Minecraft dev runs (client/server test instances) ===
+/runs/
+
+# === IDE / tooling ===
+/.idea/
+*.iml
+/.vscode/
+/.claude/
+
+# === Millenaire (dependency, not part of this add-on) ===
+/millenaire-*.jar
+/decompiled_millenaire_beta2/
+/millenaire_src/
+/org/
+
+# === Unused NeoForge MDK scaffold (not the actual project source) ===
+/MDK-1.21.1-NeoGradle/
+
+# === Test save data / API exploration artifacts ===
+/saves_party/
+/config_javap.txt
+/decompile_log.txt
+/village_javap.txt
+
+# === OS ===
+.DS_Store
+Thumbs.db

@@ -1,0 +1,12 @@
+{
+  "milltools.raid.attack": "§c[Raid] Le village %s est attaqué !",
+  "milltools.raid.victory": "§a[Raid] Le village %s a repoussé l'attaque !",
+  "milltools.command.enabled": "[MillTools] Raids activés.",
+  "milltools.command.disabled": "[MillTools] Raids désactivés.",
+  "milltools.command.status": "[MillTools] Raids: %s | Raids actifs: %s",
+  "milltools.command.reloaded": "[MillTools] Configuration rechargée depuis milltools.cfg.",
+  "milltools.status.active": "ACTIF",
+  "milltools.status.inactive": "INACTIF",
+  "milltools.bossbar.title": "⚔ Raid sur %s",
+  "milltools.raid.expired": "§6[Raid] L'aube se lève — l'attaque du village %s se dissipe."
+}
