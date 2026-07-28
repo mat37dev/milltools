@@ -11,6 +11,7 @@
 *.iml
 /.vscode/
 /.claude/
+/CLAUDE.md
 
 # === Millenaire (dependency, not part of this add-on) ===
 /millenaire-*.jar
