@@ -6,7 +6,8 @@
     "HuntMonsterGoalMixin",
     "EngageTargetGoalMixin",
     "VillageIntegrityCheckerMixin",
-    "MillVillagerArmorSyncMixin"
+    "MillVillagerArmorSyncMixin",
+    "AbstractTreeGeneratorFixMixin"
   ],
   "injectors": {
     "defaultRequire": 1

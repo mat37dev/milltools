@@ -39,6 +39,10 @@ système de raids.
   Millenaire (le cooldown de 5 minutes n'était pas respecté après la toute première mort).
 - Fix de l'armure des villageois jamais affichée côté client (l'inventaire virtuel de Millenaire
   n'est jamais synchronisé au client).
+- Fix des arbres (pommiers, oliviers, pistachiers) qui ne poussaient jamais lorsque plantés sous
+  Y=1 (village en sous-sol/carrière) : le générateur d'arbre natif suppose un monde sans hauteur
+  négative (héritage d'avant la 1.18) et rejetait la génération avant même de vérifier
+  lumière/sol/espace.
 
 ### 🛠️ Outils de développement
 Auto-prestige max + contrôle de culture au login (section `[dev]`, désactivé par défaut) — utile
