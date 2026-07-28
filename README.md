@@ -8,6 +8,8 @@ et d'options de confort pour Millenaire. Chaque fonctionnalité est indépendant
 **activable/désactivable** via le fichier de configuration généré au premier lancement
 (`config/milltools/milltools.cfg`).
 
+Historique des versions : voir [CHANGELOG.md](CHANGELOG.md).
+
 ## Fonctionnalités
 
 ### 🗡️ Raids nocturnes — *en développement, désactivé par défaut*
