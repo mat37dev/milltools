@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "cider",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "pattern": [
+    "##",
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": { "item": "millenaire:cider_apple" }
+  },
+  "result": {
+    "id": "millenaire:cider",
+    "count": 1
+  }
+}

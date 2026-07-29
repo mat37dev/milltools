@@ -1,0 +1,30 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_rice": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:rice" }
+        ]
+      }
+    },
+    "has_turmeric": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:turmeric" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_rice", "has_turmeric" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:vegcurry", "milltools:chickencurry" ]
+  }
+}

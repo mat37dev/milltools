@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "chickencurry",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "pattern": [
+    "T",
+    "C",
+    "R"
+  ],
+  "key": {
+    "T": { "item": "millenaire:turmeric" },
+    "C": { "item": "minecraft:chicken" },
+    "R": { "item": "millenaire:rice" }
+  },
+  "result": {
+    "id": "millenaire:chickencurry",
+    "count": 1
+  }
+}

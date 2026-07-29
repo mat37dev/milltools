@@ -14,6 +14,9 @@ public class RaidConfig {
     // Instance statique accessible depuis les Mixins
     public static RaidConfig INSTANCE = defaults();
 
+    // [general]
+    public boolean generalRestoreMillenaireRecipes = true;
+
     // [raid] — système de raids nocturnes, non finalisé, déconseillé de l'activer en production
     public boolean enabled = false;
     public double villageRadius = 80.0;
@@ -30,6 +33,7 @@ public class RaidConfig {
     // [dev]
     public boolean devAutoPrestige = false;
     public String devPrestigeCulture = "norman";
+    public boolean devUnlockCropKnowledge = false;
 
     // [difficulty]
     public int phase1Points = 20;

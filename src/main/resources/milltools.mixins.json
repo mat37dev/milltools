@@ -7,7 +7,8 @@
     "EngageTargetGoalMixin",
     "VillageIntegrityCheckerMixin",
     "MillVillagerArmorSyncMixin",
-    "AbstractTreeGeneratorFixMixin"
+    "AbstractTreeGeneratorFixMixin",
+    "GrapeVineHarvestFixMixin"
   ],
   "injectors": {
     "defaultRequire": 1

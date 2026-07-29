@@ -8,7 +8,7 @@
 
 ### ✅ Étape 1 — Environnement de développement (TERMINÉ)
 - `build.gradle` configuré (NeoForge 21.1.227 + Millenaire `compileOnly`)
-- `gradle.properties` (mod_id=`milltools`, version=0.1.0)
+- `gradle.properties` (mod_id=`milltools`, version=0.2.0)
 - `settings.gradle`, `gradlew`, `gradlew.bat`, `gradle/wrapper/` en place
 - `neoforge.mods.toml` (dépendance `millenaire` required, chargé AFTER)
 - `MillToolsMod.java` — point d'entrée minimal
@@ -45,6 +45,8 @@ src/main/java/com/millenaire/raids/
 ├── config/
 │   ├── RaidConfig.java              ✅ POJO de configuration (defaults inclus)
 │   └── RaidConfigLoader.java        ✅ Génère et parse config/milltools/milltools.cfg
+├── condition/
+│   └── RestoreRecipesCondition.java ✅ Condition data-driven "milltools:recipes_enabled" ([general] restore_millenaire_recipes), enregistrée dans NeoForgeRegistries.Keys.CONDITION_CODECS
 ├── raid/
 │   ├── RaidManager.java             ✅ Map<VillageId, RaidInstance>, sélection de vague, tick, annulation distance
 │   ├── RaidInstance.java            ✅ STARTING→ACTIVE→WON/CANCELLED, spawn périmètre, goals IA, bossbar, défenseurs, messages i18n
@@ -65,16 +67,20 @@ src/main/java/com/millenaire/raids/
 │       └── GuardEquipmentManager.java  ✅ Équipe l'arme du garde (mainhand) ; l'armure s'affiche via MillVillagerArmorSyncMixin (section 12)
 └── event/
     ├── RaidEventHandler.java        ✅ Tick nocturne + détection joueur en village
-    └── DevConvenienceHandler.java   ✅ [dev] auto_prestige : prestige max + contrôle culture au login (outil de test, pas pour la prod)
+    └── DevConvenienceHandler.java   ✅ [dev] auto_prestige + unlock_crop_knowledge : prestige max/contrôle culture/déblocage plantation au login (outil de test, pas pour la prod). Toujours enregistré sur l'event bus (relit RaidConfig.INSTANCE à chaque appel) ; applyToOnlinePlayers() permet à /milltools reload de réappliquer l'effet aux joueurs déjà connectés
 
 src/main/java/com/millenaire/raids/mixin/           ⚠️ Modifient le comportement NATIF de Millénaire (voir section 12)
 ├── HuntMonsterGoalMixin.java         ✅ Étend HuntMonsterGoal aux mobs de [village_enemies] (ex: Slime)
 ├── EngageTargetGoalMixin.java        ✅ Autorise EngageTargetGoal à engager ces mêmes cibles étendues
 ├── VillageIntegrityCheckerMixin.java ✅ Bloque tout respawn de villageois d'un village tant que son raid Millénaire natif (village.isUnderAttack()) n'est pas terminé
-└── MillVillagerArmorSyncMixin.java   ✅ Corrige l'armure des villageois jamais affichée côté client (bug natif Millénaire)
+├── MillVillagerArmorSyncMixin.java   ✅ Corrige l'armure des villageois jamais affichée côté client (bug natif Millénaire)
+└── GrapeVineHarvestFixMixin.java     ✅ Corrige le rendement incohérent de la vigne (crop_vine) selon la moitié cassée en premier — voir section 12
 
 src/main/resources/
-├── milltools.mixins.json      ✅ Déclare les 3 mixins ci-dessus (remap=false, JAVA_21)
+├── milltools.mixins.json      ✅ Déclare les mixins ci-dessus (remap=false, JAVA_21)
+├── data/millenaire/loot_table/blocks/crop_vine.json  ✅ Override de la loot table native (condition sans "half") — 1ère utilisation d'un override de datapack dans ce projet, voir section 12
+├── data/milltools/recipe/*.json               ✅ 8 recettes de craft joueur restaurées (cidre, vin, huile d'olive, curry x2, masa, wah, coton→laine), chacune conditionnée par "milltools:recipes_enabled"
+├── data/milltools/advancement/recipes/*.json  ✅ 6 advancements cachées (pas de "display") qui débloquent ces recettes dans le recipe book à l'obtention de l'ingrédient correspondant, même condition
 └── assets/milltools/lang/
     ├── en_us.json                    ✅ Traductions anglaises
     └── fr_fr.json                    ✅ Traductions françaises
@@ -89,9 +95,10 @@ src/main/resources/
 /milltools enable   → active les raids (sauvegardé)
 /milltools disable  → désactive les raids (sauvegardé)
 /milltools status   → affiche l'état + raids en cours
-/milltools reload   → recharge milltools.cfg depuis le disque sans redémarrer
-                             (ne couvre PAS [dev].auto_prestige, qui n'est (dés)enregistré
-                             comme event handler qu'au démarrage du mod — restart nécessaire)
+/milltools reload   → recharge milltools.cfg depuis le disque et réapplique à chaud tous les
+                             effets qui en dépendent, y compris [dev] (auto_prestige,
+                             unlock_crop_knowledge) pour les joueurs déjà connectés — aucun
+                             redémarrage nécessaire
 ```
 - Nécessite OP (niveau 2)
 - État sauvegardé dans un `SavedData` pour persister entre les sessions
@@ -130,6 +137,8 @@ Format : fichier texte structuré (style `.cfg` ou `.toml` simple, lisible sans 
 auto_prestige = false
 # Culture visée par auto_prestige (ex: norman, japanese, byzantine)
 prestige_culture = norman
+# Débloque au login la connaissance de plantation de toutes les cultures récoltables, sans achat
+unlock_crop_knowledge = false
 
 [general]
 enabled = true
@@ -281,7 +290,7 @@ Messages joueur traduits côté client via `Component.translatable()`. Résoluti
 
 ### 12. Mixins — modifications du comportement natif de Millénaire ⚠️
 
-Ces trois mixins (`milltools.mixins.json`, `remap=false` car le JAR Millénaire n'est pas obfusqué) ne concernent **pas** notre système de raids de monstres, mais corrigent/étendent des mécaniques **propres à Millénaire** :
+Ces mixins (`milltools.mixins.json`, `remap=false` car le JAR Millénaire n'est pas obfusqué) ne concernent **pas** notre système de raids de monstres, mais corrigent/étendent des mécaniques **propres à Millénaire** :
 
 | Mixin | Cible | Effet |
 |---|---|---|
@@ -289,6 +298,9 @@ Ces trois mixins (`milltools.mixins.json`, `remap=false` car le JAR Millénaire 
 | `EngageTargetGoalMixin` | `EngageTargetGoal.resolveTarget` (static) | Sans ce mixin, un villageois ayant choisi un Slime comme cible via le mixin ci-dessus abandonnerait aussitôt le combat (`resolveTarget` rejette tout ce qui n'est ni `Monster` ni `MillVillager`) |
 | `VillageIntegrityCheckerMixin` | `VillageIntegrityChecker.checkIntegrity` (static, `@Inject HEAD` cancellable) | **Corrige un déséquilibre des raids inter-villages natifs de Millénaire** (village vs village, pas nos raids de monstres) : `VillagerRecord.lastRespawnTick` vaut `0` par défaut et n'est mis à jour qu'au moment d'un respawn effectif ⇒ le tout premier mort d'un villageois est immédiatement éligible au respawn dès le check périodique suivant (jusqu'à 30s, cadence de `Village.integrityTickCounter`), au lieu du cooldown annoncé de 6000 ticks (5 min). En pratique les défenseurs revenaient presque aussitôt, empêchant `liveDefenders` de retomber à 0 et donc les attaquants de gagner (`RaidManager.shouldEndRaid`). Le mixin annule tout `checkIntegrity` pour un village tant que `village.isUnderAttack()` est vrai — effet de bord assumé : la récupération des villageois "manquants" (perdus/bloqués) est aussi mise en pause pendant la durée du raid |
 | `MillVillagerArmorSyncMixin` | `MillVillager.getItemBySlot` (`@Inject HEAD` cancellable) | Corrige l'armure invisible sur tous les gardes (natif Millénaire, pas spécifique à nos raids) — voir détail juste en dessous |
+| `GrapeVineHarvestFixMixin` | `BlockGrapeVine.onRemove` (`@Redirect` sur `Level.setBlock`) | **Corrige le rendement incohérent de la vigne (`crop_vine`)** : `onRemove` efface silencieusement la moitié jumelle (haut/bas) du plant via `setBlock(..., AIR, 3)` sans jamais passer par la loot table. Combiné à l'ancienne condition `age=7 ET half=bottom` de `crop_vine.json`, un pied mûr ne donnait 1 raisin que si on cassait le bas en premier ; casser le haut en premier détruisait tout le pied pour 0 raisin. Le mixin fait tomber un raisin pour la moitié effacée automatiquement quand elle était mûre. Combiné à l'override de `crop_vine.json` ci-dessous (condition réduite à `age=7`, sans `half`), un pied mûr donne maintenant 2 raisins au total, peu importe l'ordre de cueillette |
+
+**Overrides de datapack** — en complément des mixins, `data/millenaire/loot_table/blocks/crop_vine.json` (dans `src/main/resources/`) remplace intégralement le fichier du même nom du mod Millénaire. Ça fonctionne car `neoforge.mods.toml` déclare `ordering="AFTER"` sur la dépendance `millenaire` : les ressources de milltools sont chargées après celles de Millénaire et gagnent en cas de chemin de ressource identique (remplacement complet du fichier, pas de fusion). Cette technique n'est à utiliser que pour du contenu purement data-driven (loot tables, recipes, tags...) — tout ce qui touche à du code reste un Mixin.
 
 **Bug natif — armure jamais affichée (résolu)** : `MillVillager.getItemBySlot()` est overridé par Millénaire pour les 4 slots d'armure — il recalcule *dynamiquement* la meilleure pièce possédée depuis `tool_categories.json` + l'inventaire **virtuel** du villageois (`VillagerInventory`, un simple `Map<Item,Integer>`) à **chaque lecture** (rendu, calcul de protection), en ignorant totalement ce qui a pu être posé via `setItemSlot`. Diagnostiqué via deux commandes de debug temporaires (`debug_armor` côté serveur + un mixin de log côté client, retiré une fois le diagnostic terminé) : au même tick, pour la même entité, le serveur calculait correctement `getItemBySlot(CHEST) = iron_chestplate` alors que le client renvoyait systématiquement `air`. Cause : l'inventaire virtuel n'est **jamais synchronisé au client** ; la synchronisation vanilla de l'équipement (celle qui fait fonctionner l'affichage de l'arme en main) fonctionne bien et met à jour la vraie valeur d'équipement côté client, mais `getItemBySlot()` l'ignore et recalcule depuis l'inventaire vide à chaque lecture, y compris côté client. `MillVillagerArmorSyncMixin` fait retomber `getItemBySlot()` sur `super.getItemBySlot()` (la vraie valeur vanilla synchronisée) uniquement côté client pour les 4 slots d'armure — le serveur n'est pas touché. Netherite reste hors de portée (absent de `tool_categories.json`), inchangé.
 
@@ -378,3 +390,19 @@ interface WaveDefinition {
 - `command/RaidCommand.java` — sous-commande `reload` (recharge `milltools.cfg` à chaud, sauf `[dev]`)
 
 **Point d'attention pour le déploiement** : un changement de code (mixin, classes Java) nécessite un **redémarrage complet du jeu** — `/reload` ne recharge que les datapacks/resourcepacks, jamais le bytecode ni les mixins (tissés une seule fois au boot de la JVM). Et côté build : `./gradlew compileJava` seul ne régénère pas le jar dans `build/libs/` — il faut `./gradlew build` (ou `jar`) avant de redéployer dans `mods/`.
+
+### ✅ Tranche 6 — Confort dev supplémentaire, reload à chaud généralisé, fix vigne (TERMINÉ)
+- `config/RaidConfig.java` + `RaidConfigLoader.java` — nouveau flag `[dev] unlock_crop_knowledge` (défaut `false`) ; `RaidConfigLoader.load()` régénère désormais `milltools.cfg` au format canonique à chaque démarrage (valeurs conservées, clés/sections manquantes complétées automatiquement) au lieu de ne l'écrire qu'à la création initiale du fichier
+- `event/DevConvenienceHandler.java` — refactor : toujours enregistré sur l'event bus (`MillToolsMod`), relit `RaidConfig.INSTANCE` à l'appel plutôt qu'au démarrage ; nouvelle méthode `applyToOnlinePlayers()` pour réappliquer l'effet aux joueurs déjà connectés
+- `command/RaidCommand.java` — `reload` appelle désormais `DevConvenienceHandler.applyToOnlinePlayers()` : les flags `[dev]` prennent effet immédiatement, sans redémarrage
+- `mixin/GrapeVineHarvestFixMixin.java` + override `data/millenaire/loot_table/blocks/crop_vine.json` — corrige le rendement incohérent de la vigne selon l'ordre de cueillette des deux moitiés (voir section 12)
+
+**Retenu pour la suite** : toute nouvelle option de config doit suivre ce même pattern (event handler toujours enregistré + lecture live de `RaidConfig.INSTANCE` + réapplication active dans `reload()` si l'effet est ponctuel plutôt que vérifié en continu) — ne pas réintroduire de flag dont l'effet nécessite un redémarrage.
+
+### ✅ Tranche 7 — Restauration de recettes de craft joueur disparues (TERMINÉ)
+- `config/RaidConfig.java` + `RaidConfigLoader.java` — nouvelle section `[general] restore_millenaire_recipes` (défaut `true`) ; commentaires du fichier de config généré fortement raccourcis (1 ligne par option, sans justification)
+- `condition/RestoreRecipesCondition.java` — condition `ICondition` custom (`record`, `MapCodec.unit`) lisant `RaidConfig.INSTANCE.generalRestoreMillenaireRecipes` au chargement des datapacks ; enregistrée via `DeferredRegister<MapCodec<? extends ICondition>>` sur `NeoForgeRegistries.Keys.CONDITION_CODECS` dans `MillToolsMod` (nom : `milltools:recipes_enabled`)
+- `data/milltools/recipe/*.json` — 8 recettes `crafting_shaped` (format 1.21.1, `"result": {"id", "count"}`) retrouvées dans l'ancienne version 1.12.2 du mod (`OldSource/resources/assets/millenaire/recipes/` sur le dépôt GitHub `mat37dev/Millenaire-New-Age`) et disparues sans remplacement lors de la réécriture 9.0.0-beta : `cider`, `winebasic`, `oliveoil`, `chickencurry`, `vegcurry`, `masa`, `wah`, `cotton_to_wool`. Tous les ingrédients et résultats existent toujours dans `ModItems.java` de la beta2 — seule la recette manquait
+- `data/milltools/advancement/recipes/*.json` — 6 advancements cachées (pas de bloc `display`, `parent: minecraft:recipes/root`) qui débloquent ces recettes dans le recipe book via `minecraft:inventory_changed` sur l'ingrédient de base (`cider_apple`, `grapes`, `olives`, `rice`+`turmeric`, `maize`, `cotton`) — comportement vanilla standard (recette invisible tant que l'ingrédient n'a jamais été obtenu). Chaque recette et chaque advancement portent la condition `milltools:recipes_enabled` pour rester cohérents avec le flag
+
+**Point d'attention** : contrairement aux flags `[dev]`, ce toggle est lié au cycle de chargement des datapacks (recettes/advancements) et prend effet via un `/reload` **vanilla** ou un redémarrage — pas via `/milltools reload`, qui ne touche que `milltools.cfg` et les systèmes internes du mod.

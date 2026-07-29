@@ -15,24 +15,32 @@ public class RaidConfigLoader {
 
     public static RaidConfig load(Path configDir) {
         Path file = configDir.resolve("milltools/milltools.cfg");
+        RaidConfig config;
+
         if (!Files.exists(file)) {
+            config = RaidConfig.defaults();
+        } else {
             try {
-                Files.createDirectories(file.getParent());
-                writeDefaults(file, RaidConfig.defaults());
-                MillToolsMod.LOGGER.info("[MillTools] Fichier de config généré : {}", file);
+                List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+                config = parse(lines);
             } catch (IOException e) {
-                MillToolsMod.LOGGER.error("[MillTools] Impossible de créer milltools.cfg : {}", e.getMessage());
+                MillToolsMod.LOGGER.error("[MillTools] Impossible de lire milltools.cfg : {}", e.getMessage());
                 return RaidConfig.defaults();
             }
         }
 
+        // Réécrit systématiquement le fichier au format canonique : les valeurs déjà présentes
+        // sont conservées (fusionnées dans `config` par parse()), et toute section/clé manquante
+        // (ex: ajoutée par une mise à jour du mod) est ajoutée avec sa valeur par défaut.
+        // Les commentaires personnalisés éventuellement ajoutés à la main sont en revanche perdus.
         try {
-            List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            return parse(lines);
+            Files.createDirectories(file.getParent());
+            writeDefaults(file, config);
         } catch (IOException e) {
-            MillToolsMod.LOGGER.error("[MillTools] Impossible de lire milltools.cfg : {}", e.getMessage());
-            return RaidConfig.defaults();
+            MillToolsMod.LOGGER.error("[MillTools] Impossible d'écrire milltools.cfg : {}", e.getMessage());
         }
+
+        return config;
     }
 
     private static RaidConfig parse(List<String> lines) {
@@ -61,6 +69,7 @@ public class RaidConfigLoader {
 
             try {
                 switch (section) {
+                    case "general" -> parseGeneral(config, key, value);
                     case "raid" -> parseRaid(config, key, value);
                     case "difficulty" -> parseDifficulty(config, key, value);
                     case "mob_costs" -> config.mobCosts.put(key.toUpperCase(), Integer.parseInt(value));
@@ -73,6 +82,12 @@ public class RaidConfigLoader {
             }
         }
         return config;
+    }
+
+    private static void parseGeneral(RaidConfig c, String key, String value) {
+        switch (key) {
+            case "restore_millenaire_recipes" -> c.generalRestoreMillenaireRecipes = Boolean.parseBoolean(value);
+        }
     }
 
     private static void parseRaid(RaidConfig c, String key, String value) {
@@ -102,6 +117,7 @@ public class RaidConfigLoader {
         switch (key) {
             case "auto_prestige" -> c.devAutoPrestige = Boolean.parseBoolean(value);
             case "prestige_culture" -> c.devPrestigeCulture = value;
+            case "unlock_crop_knowledge" -> c.devUnlockCropKnowledge = Boolean.parseBoolean(value);
         }
     }
 
@@ -153,22 +169,24 @@ public class RaidConfigLoader {
         sb.append("# Modifiez ce fichier puis redémarrez le serveur.\n");
         sb.append("# ============================================\n\n");
 
+        sb.append("[general]\n");
+        sb.append("# Recettes de craft Millenaire disparues en 9.0.0-beta (cidre, vin, huile d'olive, curry,\n");
+        sb.append("# masa, wah, coton -> laine)\n");
+        sb.append("restore_millenaire_recipes = ").append(c.generalRestoreMillenaireRecipes).append("\n\n");
+
         sb.append("[dev]\n");
-        sb.append("# Active le mode développeur : octroie automatiquement prestige max + contrôle culture au login (true/false)\n");
+        sb.append("# Prestige max + contrôle de culture au login\n");
         sb.append("auto_prestige = ").append(c.devAutoPrestige).append("\n");
         sb.append("# Culture visée par auto_prestige (ex: norman, japanese, byzantine)\n");
-        sb.append("prestige_culture = ").append(c.devPrestigeCulture).append("\n\n");
+        sb.append("prestige_culture = ").append(c.devPrestigeCulture).append("\n");
+        sb.append("# Débloque la connaissance de plantation de toutes les cultures au login, sans achat\n");
+        sb.append("unlock_crop_knowledge = ").append(c.devUnlockCropKnowledge).append("\n\n");
 
         sb.append("[village_enemies]\n");
-        sb.append("# Mobs supplémentaires toujours traités comme ennemis par TOUS les villages (chassés par les\n");
-        sb.append("# villageois 'helpInAttacks', comme les monstres vanilla). Utile pour les mobs que Millenaire ne\n");
-        sb.append("# reconnaît pas nativement comme hostiles (ex: le Slime, qui n'est pas un 'Monster' vanilla).\n");
-        sb.append("# Liste séparée par des virgules : ID court vanilla en majuscules (ex: SLIME) ou ID complet\n");
-        sb.append("# namespace:path pour un mob d'un autre mod (ex: monmod:custom_mob). Le Creeper est\n");
-        sb.append("# volontairement ignoré même si présent dans la liste (explosions près des bâtiments).\n");
+        sb.append("# Mobs supplémentaires traités comme ennemis par tous les villages (ex: le Slime, pas un\n");
+        sb.append("# Monster vanilla). Liste séparée par des virgules : SLIME ou namespace:path. Creeper ignoré.\n");
         sb.append("enemies = ").append(String.join(", ", c.extraEnemyTypes)).append("\n");
-        sb.append("# Distance minimale (blocs, depuis les côtés des bâtiments, pas leur centre) à laquelle ces\n");
-        sb.append("# mobs peuvent apparaître naturellement près d'un bâtiment Millenaire.\n");
+        sb.append("# Distance min. (blocs) au spawn naturel de ces mobs près d'un bâtiment\n");
         sb.append("building_buffer = ").append(c.enemyBuildingBuffer).append("\n\n");
 
         sb.append("# ================================================================\n");
@@ -177,11 +195,9 @@ public class RaidConfigLoader {
         sb.append("# ================================================================\n\n");
 
         sb.append("[raid]\n");
-        sb.append("# /!\\ Système de raids nocturnes : EN COURS DE DÉVELOPPEMENT, NON FINALISÉ.\n");
-        sb.append("# Il est fortement déconseillé de l'activer (enabled = true) en l'état : comportement\n");
-        sb.append("# non garanti, bugs possibles. À activer uniquement pour tester/contribuer au développement.\n");
+        sb.append("# /!\\ EN COURS DE DÉVELOPPEMENT, NON FINALISÉ. Déconseillé en production.\n");
         sb.append("enabled = ").append(c.enabled).append("\n");
-        sb.append("# Rayon (blocs) autour du centre du village pour considérer un joueur 'dans le village'\n");
+        sb.append("# Rayon (blocs) autour du centre du village pour considérer un joueur \"dans le village\"\n");
         sb.append("village_radius = ").append((int) c.villageRadius).append("\n");
         sb.append("# Tick de déclenchement de la phase 1 (début de nuit)\n");
         sb.append("phase1_tick = ").append(c.phase1Tick).append("\n");
@@ -189,20 +205,20 @@ public class RaidConfigLoader {
         sb.append("phase2_tick = ").append(c.phase2Tick).append("\n\n");
 
         sb.append("[difficulty]\n");
-        sb.append("# Système de raids : budget de points pour un raid aléatoire en phase 1\n");
+        sb.append("# Budget de points d'un raid aléatoire en phase 1\n");
         sb.append("phase1_points = ").append(c.phase1Points).append("\n");
-        sb.append("# Système de raids : budget de points pour un raid aléatoire en phase 2\n");
+        sb.append("# Budget de points d'un raid aléatoire en phase 2\n");
         sb.append("phase2_points = ").append(c.phase2Points).append("\n");
-        sb.append("# Système de raids : points bonus par jour mondial (scaling progressif)\n");
+        sb.append("# Bonus de points par jour mondial\n");
         sb.append("points_per_day = ").append(c.pointsPerDay).append("\n\n");
 
         sb.append("[mob_costs]\n");
-        sb.append("# Système de raids : coût en points de chaque type de monstre (pour les raids aléatoires)\n");
+        sb.append("# Coût en points de chaque mob (raids aléatoires)\n");
         c.mobCosts.forEach((mob, cost) -> sb.append(mob).append(" = ").append(cost).append("\n"));
         sb.append("\n");
 
         sb.append("[mob_weights]\n");
-        sb.append("# Système de raids : poids de sélection aléatoire (plus le chiffre est élevé, plus le mob apparaît souvent)\n");
+        sb.append("# Poids de sélection aléatoire (plus élevé = plus fréquent)\n");
         c.mobWeights.forEach((mob, weight) -> sb.append(mob).append(" = ").append(weight).append("\n"));
         sb.append("\n");
 

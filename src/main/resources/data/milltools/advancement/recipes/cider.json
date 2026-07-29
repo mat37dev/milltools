@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_cider_apple": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:cider_apple" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_cider_apple" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:cider" ]
+  }
+}

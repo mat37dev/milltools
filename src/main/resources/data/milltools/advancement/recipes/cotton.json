@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_cotton": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:cotton" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_cotton" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:cotton_to_wool" ]
+  }
+}

@@ -2,6 +2,7 @@ package com.millenaire.milltools.command;
 
 import com.millenaire.milltools.config.RaidConfig;
 import com.millenaire.milltools.config.RaidConfigLoader;
+import com.millenaire.milltools.event.DevConvenienceHandler;
 import com.millenaire.milltools.raid.RaidManager;
 import com.millenaire.milltools.raid.enemy.EnemyRegistry;
 import com.mojang.brigadier.Command;
@@ -62,14 +63,16 @@ public class RaidCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    // Recharge milltools.cfg depuis le disque sans redémarrer le jeu. Ne couvre pas [dev] auto_prestige
-    // (le handler n'est (dés)enregistré qu'au démarrage du mod) — nécessite un restart pour ce cas.
+    // Recharge milltools.cfg depuis le disque sans redémarrer le jeu, et réapplique immédiatement
+    // les effets qui en dépendent (ex: [dev] auto_prestige / unlock_crop_knowledge pour les joueurs
+    // déjà connectés, sans attendre leur prochaine connexion).
     private static int reload(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         Path configDir = FMLPaths.GAMEDIR.get().resolve("config");
         RaidConfig config = RaidConfigLoader.load(configDir);
         RaidConfig.INSTANCE = config;
         RaidManager.init(config);
         EnemyRegistry.init(config.extraEnemyTypes);
+        DevConvenienceHandler.applyToOnlinePlayers(ctx.getSource().getServer());
 
         ctx.getSource().sendSuccess(
                 () -> Component.translatable("milltools.command.reloaded"), true);

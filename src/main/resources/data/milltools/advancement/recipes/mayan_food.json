@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_maize": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:maize" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_maize" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:masa", "milltools:wah" ]
+  }
+}

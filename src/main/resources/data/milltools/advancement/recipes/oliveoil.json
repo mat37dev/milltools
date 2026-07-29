@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_olives": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:olives" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_olives" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:oliveoil" ]
+  }
+}

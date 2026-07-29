@@ -26,8 +26,17 @@ Commande de contrôle (OP niveau 2) :
 /milltools enable    — active le système de raids (persistant)
 /milltools disable   — désactive le système de raids (persistant)
 /milltools status    — affiche l'état et le nombre de raids en cours
-/milltools reload     — recharge milltools.cfg depuis le disque sans redémarrer
+/milltools reload    — recharge milltools.cfg depuis le disque et applique les changements
+                       à chaud (y compris les flags [dev], sans redémarrage)
 ```
+
+### 🍎 Recettes de craft restaurées
+Section `[general]`, `restore_millenaire_recipes` (activé par défaut) : restaure 8 recettes de
+craft joueur présentes dans l'ancienne version du mod mais disparues lors de la réécriture
+9.0.0-beta — cidre, vin, huile d'olive, curry de poulet, curry de légumes, masa, wah, coton →
+laine. Recettes cachées par défaut dans le recipe book, débloquées à l'obtention de l'ingrédient
+correspondant (comme du contenu Millenaire natif). Nécessite un `/reload` (ou redémarrage) après
+modification de ce paramètre, comme toute recette Minecraft.
 
 ### 👹 Ennemis de village personnalisables
 Section `[village_enemies]` : déclare des mobs supplémentaires (ex. le Slime, qui n'est pas un
@@ -45,18 +54,28 @@ système de raids.
   Y=1 (village en sous-sol/carrière) : le générateur d'arbre natif suppose un monde sans hauteur
   négative (héritage d'avant la 1.18) et rejetait la génération avant même de vérifier
   lumière/sol/espace.
+- Fix de la vigne (`crop_vine`) : un pied mûr ne donnait de raisin que si on cassait précisément le
+  bloc du bas ; casser le haut en premier détruisait le pied sans rien donner. Un pied mûr donne
+  maintenant 2 raisins au total, peu importe l'ordre de cueillette des deux moitiés.
 
 ### 🛠️ Outils de développement
-Auto-prestige max + contrôle de culture au login (section `[dev]`, désactivé par défaut) — utile
-pour tester rapidement sans passer par la progression normale.
+Section `[dev]`, désactivée par défaut, utile pour tester rapidement sans passer par la
+progression normale :
+- `auto_prestige` : prestige max + contrôle de culture au login pour une culture donnée.
+- `unlock_crop_knowledge` : débloque au login la connaissance de plantation de toutes les cultures
+  récoltables (pommiers, vigne, riz, coton, etc.), sans avoir à l'acheter à un chef de village.
+
+Les deux flags prennent effet immédiatement via `/milltools reload`, sans redémarrage.
 
 ## Configuration
 
-Générée automatiquement dans `config/milltools/milltools.cfg` au premier lancement. Sections :
-`[dev]`, `[village_enemies]` (actives en permanence), puis `[raid]`, `[difficulty]`,
-`[mob_costs]`, `[mob_weights]` et les raids prédéfinis (regroupés, spécifiques au système de
-raids). Le fichier est commenté ; modifiez-le puis redémarrez le serveur (ou utilisez
-`/milltools reload` pour la partie raids).
+Générée automatiquement dans `config/milltools/milltools.cfg` au premier lancement, puis
+régénérée au format canonique à chaque démarrage (valeurs personnalisées conservées, sections/clés
+manquantes ajoutées automatiquement). Sections : `[general]`, `[dev]`, `[village_enemies]` (actives
+en permanence), puis `[raid]`, `[difficulty]`, `[mob_costs]`, `[mob_weights]` et les raids
+prédéfinis (regroupés, spécifiques au système de raids). Le fichier est commenté ; modifiez-le puis
+utilisez `/milltools reload` pour appliquer les changements à chaud (sauf `[general]`, lié aux
+recettes : nécessite un `/reload` vanilla ou un redémarrage).
 
 ## Build depuis les sources
 

@@ -1,0 +1,22 @@
+{
+  "parent": "minecraft:recipes/root",
+  "neoforge:conditions": [
+    { "type": "milltools:recipes_enabled" }
+  ],
+  "criteria": {
+    "has_grapes": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          { "items": "millenaire:grapes" }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [ "has_grapes" ]
+  ],
+  "rewards": {
+    "recipes": [ "milltools:winebasic" ]
+  }
+}
